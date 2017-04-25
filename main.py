@@ -2,6 +2,7 @@
 
 
 import copy
+import time
 
 
 digits = "123456789"
@@ -40,11 +41,10 @@ class Sudoku:
                 self.assign(s, d)
 
     def assign(self, s, d):
-        otherValue = self.board[s].replace(d, "")
+        otherValues = self.board[s].replace(d, "")
 
-        if all(self.eliminate(s, d2) for d2 in otherValue) and len(self.board[s]) == 1:
-            if all(self.eliminate(s, d) for s in peers[s]):
-                return True
+        if all(self.eliminate(s, d2) for d2 in otherValues):
+            return True
 
         return False
 
@@ -57,7 +57,9 @@ class Sudoku:
         if len(self.board[s]) == 0:
             return False
         elif len(self.board[s]) == 1:
-            self.assign(s, self.board[s][0])
+            d2 = self.board[s]
+            if not all(self.eliminate(s2, d2) for s2 in peers[s]):
+                return False
 
         for u in units[s]:
             dplaces = [s for s in u if d in self.board[s]]
@@ -72,6 +74,9 @@ class Sudoku:
 
     def isEnd(self):
         return all(len(self.board[s]) == 1 for s in squares)
+
+    def isError(self):
+        return any(len(self.board[s]) == 0 for s in squares)
 
     def show(self):
         width = 1 + max(len(self.board[s]) for s in squares)
@@ -88,16 +93,19 @@ def solve(sudoku):
 
     if sudoku.isEnd():
         return sudoku
+    elif sudoku.isError():
+        return False
 
     _, s = min((len(sudoku.board[s]), s) for s in squares if len(sudoku.board[s]) > 1)
 
     for d in sudoku.board[s]:
         copySudoku = copy.deepcopy(sudoku)
-        copySudoku.assign(s, d)
 
+        copySudoku.assign(s, d)
         result = solve(copySudoku)
 
-        if result: return result
+        if result:
+            return result
 
     return False
 
@@ -127,20 +135,29 @@ def test():
 
 def main():
 
-    data = "..7......5..32......4..9752....9......37.25......4....7429..8......74..9......4.."
-
+    #data = "..7......5..32......4..9752....9......37.25......4....7429..8......74..9......4.."
+    #data = "85...24..72......9..4.........1.7..23.5...9...4...........8..7..17..........36.4."
+    data = "..53.....8......2..7..1.5..4....53...1..7...6..32...8..6.5....9..4....3......97.."
+    
     sudoku = Sudoku()
     sudoku.setData(data)
 
     sudoku.show()
 
+    start = time.time()
+    
     result = solve(sudoku)
+
+    gap = time.time() - start
 
     if result:
         result.show()
         print "Success"
     else:
         print "Fail"
+
+    print
+    print "Time:", gap
 
 
 if __name__ == "__main__":
